@@ -1,0 +1,21 @@
+# Claves y configuración local
+.env
+.env.local
+.env.*.local
+
+# Dependencias y builds
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Sistema y editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Documentos personales del máster (llevan datos personales)
+PAC_*.pdf
