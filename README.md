@@ -10,7 +10,7 @@ RepoCast lee el código de un repositorio público y lo convierte en un **progra
 
 | Recurso | Enlace |
 |---|---|
-| 🌐 Aplicación desplegada | _TODO: URL de Vercel_ |
+| 🌐 Aplicación desplegada | **https://repocast.82-223-202-30.sslip.io** |
 | 💻 Repositorio | [github.com/Dv3git/RepoCast](https://github.com/Dv3git/RepoCast) |
 | 📊 Presentación | [docs/RepoCast-presentacion.pptx](docs/RepoCast-presentacion.pptx) |
 | 🎬 Vídeo explicativo | _TODO: URL de YouTube o Drive_ · [guion](docs/guion-video.md) |
@@ -115,7 +115,7 @@ También puede hacer un **podcast de novedades**: eliges dos versiones (tags, ra
 | Visualización | **React Flow** + **dagre** · **Shiki** | Mapa interactivo con disposición automática · resaltado de código igual que en VS Code. |
 | Audio | Codificador **lamejs** (MP3) | El WAV de Gemini se pasa a MP3 de 64 kbps: unas 6 veces menos peso. |
 | Tests | **Vitest** + **Playwright** | Tests unitarios de la lógica pura y prueba E2E en un navegador real que además genera las capturas. |
-| Despliegue | **Vercel** | Funciones serverless con `maxDuration` de 300 s para los pasos largos. |
+| Despliegue | **Docker** + **Caddy** en un servidor propio | Un contenedor con `next start` en el puerto 5001; Caddy pone el HTTPS (Let's Encrypt). Se reconstruye con un solo comando. |
 
 ---
 
@@ -264,15 +264,23 @@ npm run dev                     # http://localhost:3000
 
 ## 7. Despliegue
 
-La app está pensada para **Vercel**:
+La app corre en un **servidor propio (Ubuntu) con Docker**. El contenedor escucha en el puerto 5001 y delante tiene **Caddy**, que consigue y renueva solo el certificado HTTPS de Let's Encrypt para un nombre de [sslip.io](https://sslip.io) (un DNS que traduce `repocast.82-223-202-30.sslip.io` a la IP del servidor), así que no hace falta comprar dominio:
 
-1. Importa el repositorio de GitHub en Vercel. Detecta Next.js solo.
-2. Añade las variables de entorno de la tabla anterior, salvo `SUPABASE_DB_URL`, que no hace falta en producción. Pon `NEXT_PUBLIC_SITE_URL` con la URL final.
-3. Despliega.
+- [`Dockerfile`](Dockerfile): build en varias etapas sobre `node:22-slim`. El `.env` se monta como *secreto* durante el build (las variables `NEXT_PUBLIC_*` se incrustan en el JavaScript del navegador), así que las claves nunca quedan dentro de la imagen.
+- [`docker-compose.yml`](docker-compose.yml): un único servicio con reinicio automático que publica el puerto `5001 → 3000` y lee las claves de `.env`.
+- [`scripts/deploy.sh`](scripts/deploy.sh): sube el código por SSH y reconstruye el contenedor.
+- Quien entre por la dirección sin HTTPS (`http://IP:5001`) se redirige a la oficial, conservando la ruta (lo hace [`src/proxy.ts`](src/proxy.ts)).
 
-Las rutas del pipeline declaran `maxDuration = 300`, compatible con el plan gratuito de Vercel con Fluid Compute. Las tablas y la cuenta demo se crean una sola vez desde local con `npm run db:migrate` y `npm run db:seed`.
+```bash
+bash scripts/deploy.sh --env   # primera vez: crea el .env del servidor a partir de .env.local
+bash scripts/deploy.sh         # cada cambio: sube el código y reconstruye
+```
 
-**URL de producción:** _TODO_
+El `.env` del servidor lleva las variables de la tabla anterior salvo `SUPABASE_DB_URL`, que solo usan las migraciones, y `NEXT_PUBLIC_SITE_URL` apunta a la URL pública. Las tablas y la cuenta demo se crean una sola vez desde local con `npm run db:migrate` y `npm run db:seed`.
+
+Como el pipeline va por pasos cortos (cada uno es una petición), también funcionaría en plataformas *serverless* como Vercel: las rutas largas declaran `maxDuration`.
+
+**URL de producción:** https://repocast.82-223-202-30.sslip.io
 
 ---
 

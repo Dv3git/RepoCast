@@ -25,7 +25,7 @@ Duración objetivo: **unos 7 minutos**. El enunciado obliga a grabar la pantalla
 
 **Pantalla:** la portada de la app y luego la galería (*Explorar*).
 
-> Esta es la aplicación desplegada en Vercel. Sin cuenta ya se pueden escuchar todos los episodios de la galería: hay repositorios en TypeScript, Python y Rust, en español y en inglés, y con distintos estilos.
+> Esta es la aplicación desplegada en mi servidor. Sin cuenta ya se pueden escuchar todos los episodios de la galería: hay repositorios en TypeScript, Python y Rust, en español y en inglés, y con distintos estilos.
 
 **Acción:** abre el episodio de **ky** con humor y dale al play unos 10 segundos.
 
@@ -52,7 +52,7 @@ Duración objetivo: **unos 7 minutos**. El enunciado obliga a grabar la pantalla
 > 3. **Guion:** Claude escribe el diálogo con la duración y el estilo pedidos. Si se pasa de palabras, se le pide otra versión.
 > 4. **Voces:** Gemini TTS pone las dos voces, y yo uno los trozos de audio, calculo los tiempos de cada frase y lo codifico a MP3.
 >
-> Como cada paso es una petición corta, cabe en las funciones de Vercel. Si un paso falla se reintenta, y si se cae del todo puedo reanudarlo desde el último paso completado.
+> Como cada paso es una petición corta, funciona igual en mi servidor con Docker que en una plataforma serverless. Si un paso falla se reintenta, y si se cae del todo puedo reanudarlo desde el último paso completado.
 
 ## 5. Recorrido por el episodio · 3:30-5:30
 

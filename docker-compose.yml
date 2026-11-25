@@ -1,0 +1,19 @@
+# Despliegue en un servidor propio: la app queda en http://<servidor>:5001
+services:
+  repocast:
+    build:
+      context: .
+      secrets: [env]
+    image: repocast:latest
+    container_name: repocast
+    env_file: .env
+    ports:
+      - "5001:3000"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+secrets:
+  env:
+    file: .env

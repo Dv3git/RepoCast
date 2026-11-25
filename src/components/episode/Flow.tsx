@@ -1,5 +1,6 @@
 'use client';
 
+import { copyText } from '@/lib/clipboard';
 import { useState } from 'react';
 import { toMermaid } from '@/lib/flow';
 import type { SequenceFlow } from '@/lib/types';
@@ -47,7 +48,7 @@ export function Flow({ flow, state, onRetry, onOpenFile, highlighted }: Props) {
         </div>
         <button
           onClick={async () => {
-            await navigator.clipboard.writeText(toMermaid(flow));
+            await copyText(toMermaid(flow));
             setCopied(true);
             setTimeout(() => setCopied(false), 1600);
           }}

@@ -1,5 +1,6 @@
 'use client';
 
+import { copyText } from '@/lib/clipboard';
 import { useEffect, useState } from 'react';
 import { linkAt } from '@/lib/chapters';
 import { formatTime } from '@/lib/format';
@@ -12,7 +13,7 @@ function CopyField({ label, value, multiline = false }: { label: string; value: 
         <p className="text-sm text-ink-300">{label}</p>
         <button
           onClick={async () => {
-            await navigator.clipboard.writeText(value);
+            await copyText(value);
             setCopied(true);
             setTimeout(() => setCopied(false), 1600);
           }}

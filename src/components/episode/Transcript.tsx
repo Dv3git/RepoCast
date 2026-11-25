@@ -1,5 +1,6 @@
 'use client';
 
+import { copyText } from '@/lib/clipboard';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { formatTime } from '@/lib/format';
 import { SPEAKERS, type Language, type ScriptTurn } from '@/lib/types';
@@ -27,7 +28,7 @@ export function Transcript({ turns, language, active, following, onSeek, onOpenF
 
   async function copyLink(i: number, seconds: number) {
     if (!linkFor) return;
-    await navigator.clipboard.writeText(linkFor(seconds));
+    await copyText(linkFor(seconds));
     setCopied(i);
     setTimeout(() => setCopied((c) => (c === i ? null : c)), 1600);
   }
