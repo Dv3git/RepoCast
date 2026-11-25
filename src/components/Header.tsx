@@ -67,7 +67,7 @@ export function Footer() {
   return (
     <footer className="mt-24 border-t border-ink-800">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm text-ink-400 sm:flex-row sm:items-center sm:justify-between">
-        <p>RepoCast · Trabajo Fin de Máster · Desarrollo con IA</p>
+        <p>RepoCast · Trabajo Fin de Máster de Francisco Luis Campos Franco · Desarrollo con IA</p>
         <p>
           Análisis con Claude · Voces con Gemini · Solo repositorios públicos
         </p>

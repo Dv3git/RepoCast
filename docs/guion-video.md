@@ -17,7 +17,7 @@ Duración objetivo: **unos 7 minutos**. El enunciado obliga a grabar la pantalla
 
 **Pantalla:** diapositiva 1 (portada) y después la 2 (el problema).
 
-> Hola, soy [tu nombre] y este es mi proyecto final del Máster de Desarrollo con IA: **RepoCast**.
+> Hola, soy Francisco Luis Campos Franco y este es mi proyecto final del Máster de Desarrollo con IA: **RepoCast**.
 >
 > Cuando llegas a un proyecto nuevo o quieres entender una librería, te encuentras cientos de ficheros y un README que te dice cómo instalarla, pero no cómo está construida por dentro. RepoCast resuelve eso: pegas la URL de un repositorio de GitHub y en un minuto tienes un **podcast de dos voces** que te lo explica, un **mapa de su arquitectura**, una **visita guiada** por el código y un **chat** para preguntarle.
 

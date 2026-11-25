@@ -5,6 +5,8 @@
 RepoCast lee el código de un repositorio público y lo convierte en un **programa de radio de dos voces**, un **mapa interactivo de su arquitectura**, una **visita guiada por el código** y un **chat** que responde citando ficheros y líneas.
 
 > Trabajo Fin de Máster · Máster de Desarrollo con IA (BIG school)
+>
+> **Autor:** Francisco Luis Campos Franco
 
 | Recurso | Enlace |
 |---|---|
