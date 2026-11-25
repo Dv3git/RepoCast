@@ -14,7 +14,8 @@
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "node scripts/seed.mjs",
     "e2e": "tsx scripts/e2e.mts",
-    "gallery": "tsx --conditions=react-server --env-file=.env.local scripts/generate-gallery.mts"
+    "gallery": "tsx --conditions=react-server --env-file=.env.local scripts/generate-gallery.mts",
+    "backfill": "tsx --conditions=react-server --env-file=.env.local scripts/backfill-extras.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.13.0",

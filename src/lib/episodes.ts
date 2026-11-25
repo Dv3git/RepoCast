@@ -2,11 +2,11 @@ import 'server-only';
 import { getRepoMeta, parseRepoInput, resolveSha } from '@/lib/github';
 import { assertQuota, recordUsage } from '@/lib/quota';
 import { db } from '@/lib/supabase/server';
-import type { Analysis, Duration, Episode, Kind, Language, PublicEpisode, Style } from '@/lib/types';
+import type { Analysis, AnalysisExtras, Duration, Episode, Kind, Language, PublicEpisode, Style } from '@/lib/types';
 import { DURATIONS, LANGUAGES, STYLES } from '@/lib/types';
 
 const PUBLIC_COLUMNS =
-  'id, slug, user_id, kind, owner, repo, ref, sha, base_ref, base_sha, language, duration, style, status, status_detail, error, attempts, repo_meta, compare_stats, analysis_id, title, tagline, script, audio_path, audio_seconds, waveform, featured, plays, created_at, updated_at';
+  'id, slug, user_id, kind, owner, repo, ref, sha, base_ref, base_sha, language, duration, style, status, status_detail, error, attempts, repo_meta, compare_stats, analysis_id, title, tagline, script, audio_path, audio_seconds, waveform, chapters, featured, plays, created_at, updated_at';
 
 export function audioUrl(path: string | null) {
   if (!path) return null;
@@ -37,6 +37,7 @@ export function toPublic(e: Episode, viewerId: string | null = null): PublicEpis
     audioUrl: audioUrl(e.audio_path),
     audioSeconds: e.audio_seconds,
     waveform: e.waveform,
+    chapters: e.chapters ?? null,
     createdAt: e.created_at,
     isOwner: viewerId !== null && viewerId === e.user_id,
   };
@@ -52,16 +53,26 @@ export async function getEpisodeById(id: string): Promise<Episode | null> {
   return (data as Episode | null) ?? null;
 }
 
-/** Análisis y ruta del snapshot de un episodio (solo servidor). */
-export async function getEpisodeInternals(id: string): Promise<{ snapshotPath: string | null; analysis: Analysis | null }> {
+export interface EpisodeInternals {
+  snapshotPath: string | null;
+  analysisId: string | null;
+  analysis: Analysis | null;
+  /** Diagrama de flujo y glosario, si ya se generaron. */
+  extras: AnalysisExtras | null;
+}
+
+/** Análisis, extras y ruta del snapshot de un episodio (solo servidor). */
+export async function getEpisodeInternals(id: string): Promise<EpisodeInternals> {
   const { data } = await db().from('episodes').select('snapshot_path, analysis_id').eq('id', id).maybeSingle();
-  if (!data) return { snapshotPath: null, analysis: null };
+  if (!data) return { snapshotPath: null, analysisId: null, analysis: null, extras: null };
   let analysis: Analysis | null = null;
+  let extras: AnalysisExtras | null = null;
   if (data.analysis_id) {
-    const { data: a } = await db().from('analyses').select('data').eq('id', data.analysis_id).maybeSingle();
+    const { data: a } = await db().from('analyses').select('data, extras').eq('id', data.analysis_id).maybeSingle();
     analysis = (a?.data as Analysis | undefined) ?? null;
+    extras = (a?.extras as AnalysisExtras | null | undefined) ?? null;
   }
-  return { snapshotPath: (data.snapshot_path as string | null) ?? null, analysis };
+  return { snapshotPath: (data.snapshot_path as string | null) ?? null, analysisId: data.analysis_id, analysis, extras };
 }
 
 export async function listReadyEpisodes(limit = 12): Promise<Episode[]> {

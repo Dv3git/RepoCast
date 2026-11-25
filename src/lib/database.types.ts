@@ -1,5 +1,5 @@
 // Tipos de la base de datos (mismo formato que genera `supabase gen types`).
-// Reflejan supabase/migrations/001_schema.sql.
+// Reflejan supabase/migrations/.
 
 // Las columnas jsonb se validan en la aplicación (zod y tipos de dominio), no aquí.
 export type Json = unknown;
@@ -33,6 +33,7 @@ type EpisodeRow = {
   audio_path: string | null;
   audio_seconds: number | null;
   waveform: Json | null;
+  chapters: Json | null;
   usage: Json;
   featured: boolean;
   plays: number;
@@ -50,6 +51,7 @@ type AnalysisRow = {
   language: string;
   snapshot_path: string;
   data: Json;
+  extras: Json | null;
   usage: Json;
   created_at: string;
 };
@@ -58,6 +60,15 @@ type UsageEventRow = {
   id: number;
   user_id: string;
   kind: string;
+  created_at: string;
+};
+
+type NoteRow = {
+  id: string;
+  user_id: string;
+  episode_id: string;
+  seconds: number;
+  text: string;
   created_at: string;
 };
 
@@ -89,6 +100,7 @@ export type Database = {
           | 'audio_path'
           | 'audio_seconds'
           | 'waveform'
+          | 'chapters'
           | 'usage'
           | 'featured'
           | 'plays'
@@ -100,8 +112,14 @@ export type Database = {
       };
       analyses: {
         Row: AnalysisRow;
-        Insert: Optional<AnalysisRow, 'id' | 'base_sha' | 'usage' | 'created_at'>;
+        Insert: Optional<AnalysisRow, 'id' | 'base_sha' | 'extras' | 'usage' | 'created_at'>;
         Update: Partial<AnalysisRow>;
+        Relationships: [];
+      };
+      notes: {
+        Row: NoteRow;
+        Insert: Optional<NoteRow, 'id' | 'text' | 'created_at'>;
+        Update: Partial<NoteRow>;
         Relationships: [];
       };
       usage_events: {

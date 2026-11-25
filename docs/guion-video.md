@@ -1,6 +1,6 @@
 # Guion del vídeo de RepoCast
 
-Duración objetivo: **6 a 7 minutos**. El enunciado obliga a grabar la pantalla mientras se explica; mostrar la cara es opcional.
+Duración objetivo: **unos 7 minutos**. El enunciado obliga a grabar la pantalla mientras se explica; mostrar la cara es opcional.
 
 ## Antes de grabar
 
@@ -54,7 +54,7 @@ Duración objetivo: **6 a 7 minutos**. El enunciado obliga a grabar la pantalla 
 >
 > Como cada paso es una petición corta, cabe en las funciones de Vercel. Si un paso falla se reintenta, y si se cae del todo puedo reanudarlo desde el último paso completado.
 
-## 5. Recorrido por el episodio · 3:30-5:00
+## 5. Recorrido por el episodio · 3:30-5:30
 
 **Acción:** cuando termine, dale al play unos segundos.
 
@@ -70,11 +70,27 @@ Duración objetivo: **6 a 7 minutos**. El enunciado obliga a grabar la pantalla 
 
 > El chat responde sobre el código real y **cita ficheros y líneas**. Si pulso una cita, se abre el código. El repositorio va en la caché de prompts de Claude, así que las preguntas siguientes son más rápidas y baratas.
 
-**Compartir:** abre la pestaña.
+**Capítulos:** pulsa un capítulo de la tira bajo el reproductor.
 
-> Cada episodio tiene una página pública, un reproductor que se puede incrustar en cualquier web y un badge para poner en el README del proyecto.
+> El episodio viene dividido en capítulos, que también aparecen como cortes en la forma de onda y como títulos en la transcripción.
 
-## 6. Técnica y calidad · 5:00-6:15
+**Flujo:** cambia a la pestaña *Flujo* y pulsa un paso del diagrama.
+
+> Esto es el recorrido principal del código como diagrama de secuencia: quién llama a quién y en qué orden. Cada paso abre su código, y se puede copiar en formato Mermaid para pegarlo en un README.
+
+**Notas:** en la pestaña *Notas*, escribe una nota corta y pulsa *Marcar este momento*.
+
+> Mientras escucho puedo guardar notas o marcadores en el segundo exacto. Salen como puntos amarillos sobre el audio y son privados.
+
+**Compartir:** abre la pestaña y marca *Empezar en…*.
+
+> Cada episodio tiene una página pública, un reproductor que se puede incrustar en cualquier web y un badge para poner en el README del proyecto. Además puedo compartir un momento concreto: el enlace lleva el segundo.
+
+**Guía escrita:** pulsa *📄 Guía escrita* arriba a la derecha.
+
+> Y si prefiero leer, todo el episodio se convierte en una guía: arquitectura, flujo, visita guiada con el código, glosario y mis notas. Se imprime, se guarda en PDF o se descarga en Markdown.
+
+## 6. Técnica y calidad · 5:30-6:30
 
 **Pantalla:** diapositivas 8 (arquitectura), 10 (stack) y 11 (costes y seguridad). Opcional: el código en VS Code (`src/lib/pipeline.ts` y `src/lib/claude.ts`).
 
@@ -89,7 +105,7 @@ Duración objetivo: **6 a 7 minutos**. El enunciado obliga a grabar la pantalla 
 >
 > En cuanto a pruebas, hay tests unitarios con Vitest y una prueba de extremo a extremo con Playwright que recorre toda la aplicación en Chrome.
 
-## 7. IA en el desarrollo y cierre · 6:15-7:00
+## 7. IA en el desarrollo y cierre · 6:30-7:15
 
 **Pantalla:** diapositiva 12 y después la 13 (cierre).
 

@@ -18,8 +18,16 @@ async function Episode({ params }: { params: PageProps<'/e/[slug]'>['params'] })
   const { slug } = await params;
   const [episode, user] = await Promise.all([getEpisodeBySlug(slug), getCurrentUser()]);
   if (!episode) notFound();
-  const { analysis } = await getEpisodeInternals(episode.id);
-  return <EpisodeView key={`${episode.id}-${episode.status}`} initial={toPublic(episode, user?.id ?? null)} analysis={analysis} />;
+  const { analysis, extras } = await getEpisodeInternals(episode.id);
+  return (
+    <EpisodeView
+      key={`${episode.id}-${episode.status}`}
+      initial={toPublic(episode, user?.id ?? null)}
+      analysis={analysis}
+      initialExtras={extras}
+      signedIn={user !== null}
+    />
+  );
 }
 
 export default function EpisodePage({ params }: PageProps<'/e/[slug]'>) {

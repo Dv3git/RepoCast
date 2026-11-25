@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { formatTime } from '@/lib/format';
 import { SPEAKERS, type Language, type ScriptTurn } from '@/lib/types';
 
@@ -11,14 +11,26 @@ interface Props {
   following: boolean;
   onSeek: (seconds: number) => void;
   onOpenFile: (path: string) => void;
+  /** Título del capítulo que empieza en cada intervención. */
+  chapterTitles?: Map<number, string>;
+  /** Enlace para compartir una intervención concreta. */
+  linkFor?: (seconds: number) => string;
 }
 
 function shortName(path: string) {
   return path.split('/').pop() ?? path;
 }
 
-export function Transcript({ turns, language, active, following, onSeek, onOpenFile }: Props) {
+export function Transcript({ turns, language, active, following, onSeek, onOpenFile, chapterTitles, linkFor }: Props) {
   const box = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState<number | null>(null);
+
+  async function copyLink(i: number, seconds: number) {
+    if (!linkFor) return;
+    await navigator.clipboard.writeText(linkFor(seconds));
+    setCopied(i);
+    setTimeout(() => setCopied((c) => (c === i ? null : c)), 1600);
+  }
 
   // Mientras suena, mantiene a la vista la intervención activa (solo dentro del panel).
   useEffect(() => {
@@ -37,11 +49,15 @@ export function Transcript({ turns, language, active, following, onSeek, onOpenF
       {turns.map((t, i) => {
         const isActive = i === active;
         const host = t.speaker === 'host';
+        const chapter = chapterTitles?.get(i);
         return (
+          <Fragment key={i}>
+          {chapter && (
+            <h3 className={`px-3 pb-1 text-xs font-semibold tracking-wide text-ink-400 uppercase ${i === 0 ? '' : 'pt-4'}`}>{chapter}</h3>
+          )}
           <div
-            key={i}
             data-turn={i}
-            className={`group rounded-xl px-3 py-2.5 transition ${isActive ? 'bg-brand-500/12 ring-1 ring-brand-500/40' : 'hover:bg-ink-800/60'}`}
+            className={`group relative rounded-xl px-3 py-2.5 transition ${isActive ? 'bg-brand-500/12 ring-1 ring-brand-500/40' : 'hover:bg-ink-800/60'}`}
           >
             <button
               onClick={() => t.start !== undefined && onSeek(t.start)}
@@ -54,6 +70,17 @@ export function Transcript({ turns, language, active, following, onSeek, onOpenF
               </span>
               <span className={`mt-1 block text-[15px] leading-relaxed ${isActive ? 'text-white' : 'text-ink-300'}`}>{t.text}</span>
             </button>
+            {linkFor && t.start !== undefined && (
+              <button
+                onClick={() => void copyLink(i, t.start as number)}
+                className={`focus-ring absolute top-2 right-2 rounded-md px-1.5 py-0.5 text-[11px] text-ink-400 transition hover:bg-ink-800 hover:text-white ${
+                  copied === i ? 'opacity-100' : 'focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+                }`}
+                aria-label={`Copiar enlace a este momento (${formatTime(t.start)})`}
+              >
+                {copied === i ? '¡Enlace copiado!' : '🔗 Enlace'}
+              </button>
+            )}
             {t.files.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {t.files.slice(0, 4).map((f) => (
@@ -69,6 +96,7 @@ export function Transcript({ turns, language, active, following, onSeek, onOpenF
               </div>
             )}
           </div>
+          </Fragment>
         );
       })}
     </div>

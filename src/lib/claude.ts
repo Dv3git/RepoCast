@@ -3,11 +3,15 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod/v4';
 import { env } from '@/lib/env';
+import { cleanChapters } from '@/lib/chapters';
+import { cleanFlow } from '@/lib/flow';
 import { knownPaths, snapshotToPrompt, type Snapshot } from '@/lib/snapshot';
 import {
   DURATIONS,
   SPEAKERS,
   type Analysis,
+  type AnalysisExtras,
+  type GlossaryTerm,
   type ChangesAnalysis,
   type Duration,
   type Language,
@@ -282,6 +286,102 @@ ${LANG_RULE[language]}`;
   }
   if (!best) throw new Error('El guion ha salido vacío.');
   return { turns: best.turns, usage, words: best.count };
+}
+
+// ---------- Capítulos del podcast ----------
+
+const ChaptersSchema = z.object({ chapters: z.array(z.object({ turn: z.number().int(), title: z.string() })) });
+
+export async function writeChapters(turns: ScriptTurn[], language: Language) {
+  const n = turns.length;
+  const target = n < 10 ? '2 or 3' : n < 20 ? '3 or 4' : '4 to 6';
+  const { data, usage } = await structured({
+    system: `You split podcast scripts into chapters, like the chapter markers of a podcast app.
+- Create ${target} chapters that follow the topics of the conversation. The first chapter starts at turn 0.
+- turn: the number of the turn where the chapter starts. title: 2 to 5 words, specific to this episode (e.g. "How the store is created", not "Part 2").
+${LANG_RULE[language]}`,
+    user: turns.map((t, i) => `[${i}] ${t.speaker}: ${t.text}`).join('\n'),
+    schema: ChaptersSchema,
+    effort: 'low',
+  });
+  return { chapters: cleanChapters(data.chapters, n), usage };
+}
+
+// ---------- Extras del análisis: diagrama de flujo y glosario ----------
+
+const GlossarySchema = z.array(z.object({ term: z.string(), definition: z.string() }));
+
+const FlowSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  participants: z.array(z.object({ id: z.string(), name: z.string(), module: z.string() })),
+  steps: z.array(
+    z.object({
+      from: z.string(),
+      to: z.string(),
+      label: z.string(),
+      kind: z.enum(['call', 'return']),
+      file: z.string(),
+      startLine: z.number().int(),
+      endLine: z.number().int(),
+    }),
+  ),
+});
+
+const GLOSSARY_RULE = `glossary: 6 to 10 terms a newcomer needs to understand this repository (domain concepts, project-specific names, patterns or tools it relies on), in alphabetical order. definition: one or two plain sentences, explained in the context of this project.`;
+
+const EXTRAS_OVERVIEW_SYSTEM = `You are the code analyst behind RepoCast. You receive a repository snapshot (file tree and key files with line numbers "12| code") and the analysis already made of it.
+Produce two extra pieces for newcomers:
+- flow: the single most important runtime flow of the project, told as a UML sequence diagram (e.g. "what happens when you call create()", "how a request is handled", "what happens when you run the CLI").
+  - participants: 3 to 6, left to right in order of appearance: the user or caller, then modules, then external systems. id: a short identifier made of letters only (e.g. "User", "Store"). name: 1 to 3 words. module: the id of the matching module from the analysis, or "" if none.
+  - steps: 5 to 12 messages in chronological order. label: what happens, max 8 words. kind: "call" for a request or action, "return" for a response or result. file, startLine, endLine: where this step happens, using a file visible in <files> and its line numbers (max 40 lines); use "" and 0 when no visible file fits.
+  - title: max 60 characters. description: one or two sentences describing the flow.
+- ${GLOSSARY_RULE}
+Base everything on the code you can see.
+${INJECTION_RULE}`;
+
+const EXTRAS_CHANGES_SYSTEM = `You are the code analyst behind RepoCast. You receive what changed in a repository between two versions and the analysis already made of it.
+Produce:
+- ${GLOSSARY_RULE.replace('repository', 'release')}
+Base everything on the commits and diffs you can see.
+${INJECTION_RULE}`;
+
+export async function writeExtras(snapshot: Snapshot, analysis: Analysis, repoName: string, language: Language) {
+  const user = `Repository: ${repoName}\n\nAnalysis:\n${JSON.stringify(analysis, null, 1)}\n\n${snapshotToPrompt(snapshot)}`;
+
+  if (analysis.kind === 'changes' || snapshot.kind === 'changes') {
+    const { data, usage } = await structured({
+      system: `${EXTRAS_CHANGES_SYSTEM}\n${LANG_RULE[language]}`,
+      user,
+      schema: z.object({ glossary: GlossarySchema }),
+      effort: 'low',
+    });
+    return { extras: { flow: null, glossary: cleanGlossary(data.glossary) } satisfies AnalysisExtras, usage };
+  }
+
+  const { data, usage } = await structured({
+    system: `${EXTRAS_OVERVIEW_SYSTEM}\n${LANG_RULE[language]}`,
+    user,
+    schema: z.object({ flow: FlowSchema, glossary: GlossarySchema }),
+    effort: 'medium',
+  });
+  const flow = cleanFlow(
+    { ...data.flow, steps: data.flow.steps.map((s) => ({ ...s, file: s.file || undefined, startLine: s.startLine || undefined, endLine: s.endLine || undefined })) },
+    {
+      paths: knownPaths(snapshot),
+      visible: new Map(snapshot.files.map((f) => [f.path, f.content.split('\n').length])),
+      moduleIds: new Set(analysis.modules.map((m) => m.id)),
+    },
+  );
+  return { extras: { flow, glossary: cleanGlossary(data.glossary) } satisfies AnalysisExtras, usage };
+}
+
+function cleanGlossary(terms: GlossaryTerm[]): GlossaryTerm[] {
+  const seen = new Set<string>();
+  return terms
+    .map((t) => ({ term: t.term.trim().slice(0, 60), definition: t.definition.trim().slice(0, 400) }))
+    .filter((t) => t.term && t.definition && !seen.has(t.term.toLowerCase()) && seen.add(t.term.toLowerCase()))
+    .slice(0, 12);
 }
 
 // ---------- Chat con el repositorio ----------

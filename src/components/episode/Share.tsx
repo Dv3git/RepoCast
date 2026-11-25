@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { linkAt } from '@/lib/chapters';
+import { formatTime } from '@/lib/format';
 
 function CopyField({ label, value, multiline = false }: { label: string; value: string; multiline?: boolean }) {
   const [copied, setCopied] = useState(false);
@@ -28,20 +30,38 @@ function CopyField({ label, value, multiline = false }: { label: string; value: 
   );
 }
 
-export function Share({ slug, title, audioUrl }: { slug: string; title: string; audioUrl: string | null }) {
+interface ShareProps {
+  slug: string;
+  title: string;
+  audioUrl: string | null;
+  /** Segundo que suena ahora, para compartir desde ese momento. */
+  time: number;
+  guideUrl: string;
+  markdownUrl: string;
+}
+
+export function Share({ slug, title, audioUrl, time, guideUrl, markdownUrl }: ShareProps) {
   const [origin, setOrigin] = useState('');
+  const [fromNow, setFromNow] = useState(false);
+  const at = fromNow ? Math.floor(time) : 0;
   // La URL pública depende del dominio en el que se esté viendo la app.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setOrigin(window.location.origin), []);
 
-  const pageUrl = `${origin}/e/${slug}`;
-  const embed = `<iframe src="${origin}/embed/${slug}" width="100%" height="152" style="border:0;border-radius:12px" title="${title.replace(/"/g, '&quot;')} · RepoCast" loading="lazy"></iframe>`;
-  const badge = `[![Escúchalo en RepoCast](${origin}/api/badge/${slug})](${pageUrl})`;
+  const pageUrl = linkAt(`${origin}/e/${slug}`, at);
+  const embed = `<iframe src="${linkAt(`${origin}/embed/${slug}`, at)}" width="100%" height="152" style="border:0;border-radius:12px" title="${title.replace(/"/g, '&quot;')} · RepoCast" loading="lazy"></iframe>`;
+  const badge = `[![Escúchalo en RepoCast](${origin}/api/badge/${slug})](${origin}/e/${slug})`;
   const text = encodeURIComponent(`🎙️ ${title} — escucha este repositorio explicado en un podcast`);
 
   return (
     <div className="space-y-6">
-      <CopyField label="Enlace del episodio" value={pageUrl} />
+      <div className="space-y-2">
+        <CopyField label="Enlace del episodio" value={pageUrl} />
+        <label className="flex items-center gap-2 text-sm text-ink-300">
+          <input type="checkbox" checked={fromNow} onChange={(e) => setFromNow(e.target.checked)} className="accent-brand-500" />
+          Empezar en el <span className="tabular-nums">{formatTime(time)}</span> (también en el reproductor incrustado)
+        </label>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <a
@@ -65,6 +85,12 @@ export function Share({ slug, title, audioUrl }: { slug: string; title: string; 
             Descargar MP3
           </a>
         )}
+        <a className="focus-ring rounded-lg border border-ink-700 px-3 py-2 text-sm hover:border-ink-600" href={guideUrl} target="_blank" rel="noreferrer">
+          Guía escrita (PDF)
+        </a>
+        <a className="focus-ring rounded-lg border border-ink-700 px-3 py-2 text-sm hover:border-ink-600" href={markdownUrl} download>
+          Guía en Markdown
+        </a>
       </div>
 
       <div>

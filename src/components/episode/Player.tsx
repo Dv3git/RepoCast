@@ -7,6 +7,13 @@ export interface PlayerHandle {
   seek: (seconds: number, play?: boolean) => void;
 }
 
+/** Marca sobre la forma de onda: inicio de capítulo o nota del usuario. */
+export interface PlayerMarker {
+  at: number;
+  kind: 'chapter' | 'note';
+  label: string;
+}
+
 interface Props {
   src: string;
   duration: number | null;
@@ -15,12 +22,15 @@ interface Props {
   onFirstPlay?: () => void;
   compact?: boolean;
   downloadName?: string;
+  markers?: PlayerMarker[];
+  /** Texto junto al tiempo, por ejemplo el capítulo que suena. */
+  caption?: string;
 }
 
 const SPEEDS = [1, 1.25, 1.5, 2];
 
 export const Player = forwardRef<PlayerHandle, Props>(function Player(
-  { src, duration, waveform, onTime, onFirstPlay, compact = false, downloadName },
+  { src, duration, waveform, onTime, onFirstPlay, compact = false, downloadName, markers = [], caption },
   ref,
 ) {
   const audio = useRef<HTMLAudioElement>(null);
@@ -29,12 +39,18 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player(
   const [total, setTotal] = useState(duration ?? 0);
   const [speed, setSpeed] = useState(1);
   const started = useRef(false);
+  // Un salto pedido antes de que el navegador conozca la duración se aplica al cargarla.
+  const pendingSeek = useRef<number | null>(null);
 
   useImperativeHandle(ref, () => ({
     seek(seconds, play = true) {
       const a = audio.current;
       if (!a) return;
-      a.currentTime = seconds;
+      if (a.readyState === 0) {
+        pendingSeek.current = seconds;
+        setTime(seconds);
+        onTime?.(seconds);
+      } else a.currentTime = seconds;
       if (play) void a.play();
     },
   }));
@@ -84,7 +100,13 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player(
         }}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
-        onLoadedMetadata={(e) => setTotal(e.currentTarget.duration || duration || 0)}
+        onLoadedMetadata={(e) => {
+          setTotal(e.currentTarget.duration || duration || 0);
+          if (pendingSeek.current !== null) {
+            e.currentTarget.currentTime = pendingSeek.current;
+            pendingSeek.current = null;
+          }
+        }}
         onTimeUpdate={(e) => {
           setTime(e.currentTarget.currentTime);
           onTime?.(e.currentTarget.currentTime);
@@ -120,8 +142,29 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player(
           aria-valuetext={`${formatTime(time)} de ${formatTime(total)}`}
           onClick={seekFromBar}
           onKeyDown={onKey}
-          className={`focus-ring flex cursor-pointer items-center gap-[2px] rounded ${compact ? 'h-9' : 'h-14'}`}
+          className={`focus-ring relative flex cursor-pointer items-center gap-[2px] rounded ${compact ? 'h-9' : 'h-14'}`}
         >
+          {total > 0 &&
+            markers.map((m, i) =>
+              m.kind === 'chapter' ? (
+                m.at > 0 && (
+                  <span
+                    key={`c${i}`}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 z-10 w-[3px] -translate-x-1/2 rounded-full bg-ink-950"
+                    style={{ left: `${(m.at / total) * 100}%` }}
+                  />
+                )
+              ) : (
+                <span
+                  key={`n${i}`}
+                  aria-hidden="true"
+                  title={m.label}
+                  className="pointer-events-none absolute -top-1.5 z-10 h-2 w-2 -translate-x-1/2 rounded-full bg-amber-400 ring-2 ring-ink-900"
+                  style={{ left: `${Math.min(100, (m.at / total) * 100)}%` }}
+                />
+              ),
+            )}
           {bars.map((p, i) => (
             <span
               key={i}
@@ -131,10 +174,13 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player(
           ))}
         </div>
         <div className="mt-1.5 flex items-center justify-between text-xs text-ink-400">
-          <span className="tabular-nums">
-            {formatTime(time)} / {formatTime(total)}
+          <span className="min-w-0 truncate">
+            <span className="tabular-nums">
+              {formatTime(time)} / {formatTime(total)}
+            </span>
+            {caption && <span className="text-ink-300"> · {caption}</span>}
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <button
               onClick={() => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length])}
               className="focus-ring rounded-md px-2 py-0.5 tabular-nums hover:bg-ink-800 hover:text-white"

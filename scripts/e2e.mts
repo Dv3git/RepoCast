@@ -25,7 +25,7 @@ const shot = async (page: Page, name: string, fullPage = false) => {
 };
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
-const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', locale: 'es-ES' });
+const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', locale: 'es-ES', acceptDownloads: true });
 const page = await context.newPage();
 const errors: string[] = [];
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -97,6 +97,33 @@ try {
   await page.click('[role=tab]:has-text("Compartir")');
   await page.waitForTimeout(2500);
   await shot(page, '09-compartir');
+
+  // 7b. Capítulos, diagrama de flujo, notas y guía escrita
+  const chapters = await page.locator('nav[aria-label="Capítulos"] button').count();
+  log(`✅ ${chapters} capítulos`);
+  if (await page.locator('[role=tab]:has-text("Flujo")').count()) {
+    await page.click('[role=tab]:has-text("Flujo")');
+    await page.waitForSelector('svg[aria-label^="Diagrama de secuencia"]', { timeout: 90_000 });
+    await page.waitForTimeout(500);
+    log('✅ diagrama de flujo');
+    await shot(page, '14-flujo');
+  }
+  await page.click('[role=tab]:has-text("Notas")');
+  await page.fill('#note-text', 'Revisar cómo se suscriben los componentes');
+  await page.click('button:has-text("Guardar nota")');
+  await page.waitForSelector('li:has-text("Revisar cómo se suscriben")');
+  log('✅ nota guardada');
+  await shot(page, '15-notas');
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('a:has-text("Markdown")')]);
+  const markdown = await download.path().then((p) => (p ? import('node:fs').then((fs) => fs.readFileSync(p, 'utf8')) : ''));
+  log(`✅ guía Markdown (${markdown.length} caracteres, con la nota: ${markdown.includes('Revisar cómo se suscriben')})`);
+  await page.locator('button[aria-label="Borrar nota"]').first().click({ force: true });
+  const guide = await context.newPage();
+  await guide.goto(`${BASE}/e/${slug}/guia`, { waitUntil: 'networkidle' });
+  await guide.waitForSelector('article h1', { timeout: 90_000 });
+  await guide.screenshot({ path: `${OUT}/16-guia.png` });
+  log('📸 16-guia.png');
+  await guide.close();
 
   // 8. Página pública sin sesión, embed y badge
   const anon = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark' });

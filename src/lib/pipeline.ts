@@ -1,5 +1,6 @@
 import 'server-only';
-import { analyzeChanges, analyzeOverview, ClaudeRefusal, writeScript } from '@/lib/claude';
+import { analyzeChanges, analyzeOverview, ClaudeRefusal, writeChapters, writeScript } from '@/lib/claude';
+import { ensureExtras } from '@/lib/extras';
 import { GitHubError } from '@/lib/github';
 import { buildChangesSnapshot, buildOverviewSnapshot, loadSnapshot, saveSnapshot } from '@/lib/snapshot';
 import { db } from '@/lib/supabase/server';
@@ -119,19 +120,30 @@ async function stepScript(e: Row) {
   if (!e.analysis_id) throw new Error('Falta el análisis.');
   const { data } = await db().from('analyses').select('data').eq('id', e.analysis_id).single();
   if (!data) throw new Error('Falta el análisis.');
-  const { turns, usage } = await writeScript({
-    analysis: data.data as Analysis,
-    meta: e.repo_meta,
-    language: e.language,
-    duration: e.duration,
-    style: e.style,
-    rangeLabel: e.kind === 'changes' ? `from ${e.base_ref} to ${e.ref}` : undefined,
+  const analysisId = e.analysis_id;
+  // Mientras se escribe el guion, se preparan el diagrama de flujo y el glosario del análisis.
+  // Son opcionales: si fallan, se generarán la primera vez que alguien los pida.
+  const [{ turns, usage }] = await Promise.all([
+    writeScript({
+      analysis: data.data as Analysis,
+      meta: e.repo_meta,
+      language: e.language,
+      duration: e.duration,
+      style: e.style,
+      rangeLabel: e.kind === 'changes' ? `from ${e.base_ref} to ${e.ref}` : undefined,
+    }),
+    ensureExtras(analysisId).catch((err) => console.error(`[pipeline] extras de ${e.slug}:`, err)),
+  ]);
+  const chapters = await writeChapters(turns, e.language).catch((err) => {
+    console.error(`[pipeline] capítulos de ${e.slug}:`, err);
+    return null;
   });
   await update(e.id, {
     status: 'voicing',
-    status_detail: `Guion de ${turns.length} intervenciones`,
+    status_detail: `Guion de ${turns.length} intervenciones${chapters?.chapters.length ? ` en ${chapters.chapters.length} capítulos` : ''}`,
     script: turns,
-    usage: { ...e.usage, script: usage },
+    chapters: chapters?.chapters.length ? chapters.chapters : null,
+    usage: { ...e.usage, script: usage, ...(chapters ? { chapters: chapters.usage } : {}) },
     attempts: 0,
   });
 }

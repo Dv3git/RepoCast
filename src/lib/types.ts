@@ -103,6 +103,58 @@ export interface ChangesAnalysis {
 
 export type Analysis = OverviewAnalysis | ChangesAnalysis;
 
+/** Participante de un diagrama de secuencia: una persona, un módulo o un sistema externo. */
+export interface FlowParticipant {
+  /** Identificador apto para Mermaid (letras, números y guion bajo). */
+  id: string;
+  name: string;
+  /** id del módulo del mapa al que corresponde, o '' si no es un módulo. */
+  module: string;
+}
+
+export interface FlowStep {
+  from: string;
+  to: string;
+  label: string;
+  kind: 'call' | 'return';
+  file?: string;
+  startLine?: number;
+  endLine?: number;
+}
+
+/** El recorrido principal del código, para dibujarlo como diagrama de secuencia. */
+export interface SequenceFlow {
+  title: string;
+  description: string;
+  participants: FlowParticipant[];
+  steps: FlowStep[];
+}
+
+export interface GlossaryTerm {
+  term: string;
+  definition: string;
+}
+
+/** Material extra de un análisis, generado una sola vez y compartido por sus episodios. */
+export interface AnalysisExtras {
+  flow: SequenceFlow | null;
+  glossary: GlossaryTerm[];
+}
+
+/** Capítulo del podcast: empieza en la intervención número `turn` del guion. */
+export interface Chapter {
+  turn: number;
+  title: string;
+}
+
+/** Nota o marcador de un usuario en un momento del audio. */
+export interface Note {
+  id: string;
+  seconds: number;
+  text: string;
+  createdAt: string;
+}
+
 export type Speaker = 'host' | 'guest';
 
 export interface ScriptTurn {
@@ -159,6 +211,7 @@ export interface Episode {
   audio_path: string | null;
   audio_seconds: number | null;
   waveform: number[] | null;
+  chapters: Chapter[] | null;
   featured: boolean;
   plays: number;
   created_at: string;
@@ -189,6 +242,7 @@ export interface PublicEpisode {
   audioUrl: string | null;
   audioSeconds: number | null;
   waveform: number[] | null;
+  chapters: Chapter[] | null;
   createdAt: string;
   isOwner: boolean;
 }

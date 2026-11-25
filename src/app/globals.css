@@ -173,3 +173,15 @@ body {
     animation: none;
   }
 }
+
+/* Guía escrita: al imprimir o guardar como PDF, papel blanco */
+@page {
+  margin: 14mm;
+}
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #18181b;
+  }
+}
