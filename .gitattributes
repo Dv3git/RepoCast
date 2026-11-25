@@ -1,0 +1,5 @@
+# Lo que se ejecuta en Linux (bash o el build de Docker) va siempre con saltos LF.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+.dockerignore text eol=lf
