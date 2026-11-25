@@ -51,7 +51,6 @@ En la pantalla de entrar hay un botón **"Probar con la cuenta demo"** que la re
 8. [Costes, límites y seguridad](#8-costes-límites-y-seguridad)
 9. [Tests y calidad](#9-tests-y-calidad)
 10. [Uso de IA en el proyecto](#10-uso-de-ia-en-el-proyecto)
-11. [Próximos pasos](#11-próximos-pasos)
 
 ---
 
@@ -352,17 +351,3 @@ Además hay dos **pruebas de humo** contra las APIs reales: `scripts/smoke-pipel
 **En el desarrollo:**
 - El proyecto se ha desarrollado con **Claude Code** como asistente. Se usó para generar ideas, diseñar la arquitectura, escribir y revisar código, leer la documentación de Next.js 16, preparar los tests y documentar.
 - Las decisiones de producto y alcance fueron del autor: qué funcionalidades incluir, el tono del podcast, los límites de gasto y los proveedores. Todo se ha verificado con tests, compilación de producción y pruebas reales contra las APIs.
-
----
-
-## 11. Próximos pasos
-
-- Repositorios privados con login de GitHub (OAuth).
-- Feed RSS para suscribirse a los episodios de un repositorio, por ejemplo uno por release.
-- Elegir las voces de los presentadores.
-- Análisis por fragmentos para monorepos enormes.
-- Métricas de calidad del guion con evaluaciones automáticas.
-
----
-
-**Autor:** _TODO: nombre completo_ · Máster de Desarrollo con IA · 2026
